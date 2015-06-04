@@ -733,6 +733,53 @@ function chat_send_chatmessage($chatuser, $messagetext, $system = false, $cm = n
     return $message->id;
 }
 
+
+/**
+ * This function is used to append a record to the isTyping array stored in the cache
+ * @param Object $chatuser Object with the userid and chat id
+ * @return array()
+ */
+function chat_set_isTyping($chatuser){
+    $cache = cache::make_from_params(cache_store::MODE_APPLICATION, 'core', 'chatdata');
+    $chatUid = 'chat_' . $chatuser->chatid;
+    $chatting = $cache->get($chatUid);
+    if(empty($chatting)){
+        $chatting = array();
+    }
+    $chatting[$chatuser->userid] = date('Y-m-d H:i:s');
+    $result = $cache->set($chatUid, $chatting);
+    
+    return $cache->get($chatUid);
+}
+
+/**
+ * This function queries the cache to find out who has typed a recently and returns an array of the IDs. 
+ * It also attempted to clean the cache record of old Typing timestamps.
+ * @param Object $chatuser Object with the userid and chat id
+ * @return array() A simple array of the IDs of the users who are typing.
+ */
+function chat_get_isTyping($chatuser){
+    
+    $cache = cache::make_from_params(cache_store::MODE_APPLICATION, 'core', 'chatdata');
+    $chatUid = 'chat_' . $chatuser->chatid;
+    $chatting = $cache->get($chatUid);
+    $queryTime = date('Y-m-d H:i:s', strtotime('-2 seconds'));
+    $ret_chatters = array();
+    
+    if(!empty($chatting)){
+        foreach($chatting as $userid => $chatTime){
+            if($chatTime < $queryTime){
+                unset($chatting[$userid]);
+            }else{
+                if($userid != $chatuser->userid){
+                    $ret_chatters[] = $userid;
+                }
+            }
+        }
+    }
+    return $ret_chatters;
+}
+
 /**
  * @global object
  * @global object

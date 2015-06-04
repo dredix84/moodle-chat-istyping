@@ -258,3 +258,80 @@ M.mod_chat_ajax.init = function(Y, cfg) {
 
     gui_ajax.init(cfg);
 };
+
+
+
+
+
+var lastInputMessage = ''   //Used to store the last message the use typed
+/**
+ * Used to check if the current user is type by comparing the curent input with previous input
+ */
+function checkMeTyping(){
+    
+    //alert(document.getElementById("allowTyping"));
+    var isTyping = false;
+    var v_NowMessageInput = document.getElementById("input-message").value;
+    if(v_NowMessageInput.trim() == ''){
+        isTyping = false;
+    }else if(lastInputMessage != document.getElementById("input-message").value){
+        lastInputMessage = document.getElementById("input-message").value;
+        isTyping = true;
+    }else{
+        isTyping = false;    
+    }
+    
+    //document.getElementById("usersTypingStatus").innerHTML = "Checking"; 
+    
+    var v_allowTyping = (document.getElementById("allowTyping")?document.getElementById("allowTyping").value:-1);
+    Y.io(M.cfg.wwwroot+'/mod/chat/chat_ajax.php?typingCheck=1&sesskey='+M.cfg.sesskey, {
+        method : 'POST',
+        data :  build_querystring({
+            action : (isTyping?'isTyping':'getTyping'),
+            chat_init : 0,
+            chat_sid : document.getElementById("cid").value,
+            theme : 'none',
+            allowTyping: v_allowTyping
+        }),
+        on: {
+            success: function (x, o) {
+                try {
+                    // Parse the JSON data so we can use it in a string.
+                    d = Y.JSON.parse(o.responseText);
+                    if(d.chattingCount == 0){       //If >0, someone is typing
+                        document.getElementById("usersTypingStatus").innerHTML = " "; 
+                    }else{
+                        document.getElementById("usersTypingStatus").innerHTML = d.chatters;
+                    }
+                    
+                    
+                    var inputCTRL = document.getElementById("input-message");
+                    if(true){
+                        Y.one("#input-message").set('disabled', false);
+                        Y.one('#button-send').show();
+                        document.getElementById("input-message").className = "";
+                        inputCTRL.placeholder = '';
+                    }else{
+                        Y.one("#input-message").set('disabled', true);
+                        Y.one('#button-send').hide();
+                        document.getElementById("input-message").className = "chat_disabled";
+                        inputCTRL.value = "";
+                        inputCTRL.placeholder = 'Typing is disabled';
+                    }
+                    
+                    
+                } catch (e) {
+                    // This is what happens if the request fails.
+                    console.log("JSON Parse failed!");
+                    return;
+                }
+            }
+        }
+    });
+    
+}
+setInterval(function(){ 
+        checkMeTyping(); 
+    }, 
+    2000
+);

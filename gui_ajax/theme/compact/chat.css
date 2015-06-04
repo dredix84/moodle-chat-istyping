@@ -63,3 +63,17 @@
 
 .dir-rtl .chat-message {text-align:right;}
 .dir-rtl .mdl-chat-my-entry .chat-message .text {text-align:right;}
+
+
+#usersTypingStatus {
+    background: none repeat scroll 0 0 #dcdcdc;
+    bottom: 0;
+    font-size: 0.85em;
+    padding: 2px 0;
+    position: absolute;
+    width: 100%
+}
+.chat_disabled{
+    /*background-color: crimson !important;*/
+    cursor: no-drop;
+}

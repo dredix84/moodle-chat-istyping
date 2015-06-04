@@ -65,6 +65,58 @@ header('Pragma: no-cache');
 header('Content-Type: text/html; charset=utf-8');
 
 switch ($action) {
+case 'isTyping':
+    $cache = cache::make_from_params(cache_store::MODE_APPLICATION, 'core', 'chatdata');
+    
+    $response['chat'] = $chatuser;
+    $response['response'] = chat_set_isTyping($chatuser);
+    
+
+case 'getTyping':
+    
+    //Determining if the teacher/lecturer has allowed permission of allow typing for students
+    $chatUid = 'chat' . $course->id . '_' . $chat->id;
+    $allowTyping = optional_param('allowTyping', '', PARAM_INT);
+    $cache = cache::make_from_params(cache_store::MODE_APPLICATION, 'core', 'chatdata');
+    if($allowTyping > -1){
+        $result = $cache->set($chatUid . '_allowTyping', $allowTyping);
+        $cache->set( $component );
+        $response['allowTyping'] = 1;   //THis is to ensure user with the ability to set typing is not blocked
+    }else{
+        $response['allowTyping'] = $cache->get($chatUid . '_allowTyping');
+    }
+    
+    //Determining who is chatting
+    $cache_chatters = chat_get_isTyping($chatuser);
+    $response['chattingCount'] = count($cache_chatters);
+    $chatters = '';
+    
+
+    
+    if(count($cache_chatters)){
+        $chattingUsers = $DB->get_records_sql('SELECT firstname, lastname FROM mdl_user WHERE id IN ('.implode(',', $cache_chatters).')');
+        
+        
+        if(count($cache_chatters) == 1){
+            $chatters = $chattingUsers[key($chattingUsers)]->firstname . ' ' . $chattingUsers[key($chattingUsers)]->lastname . ' is typing';
+        }else{
+            
+            $i = 1; //Used as counter to break loop 
+            $chattersArr = array();
+            foreach($chattingUsers as $cUser){
+                $chattersArr[] = $cUser->firstname . ' ' . $cUser->lastname[0] . ' ';
+                if ($i++ == 3){break;}
+            }
+            $chatters = implode(',', $chattersArr);
+            if (count($cache_chatters) > 3){$chatters .= ' and ' . (count($cache_chatters) - 3) . ' other(s) are typing';}else{$chatters .= ' are typing';}
+        }
+        
+    }
+    $response['chatters'] = $chatters;
+    echo json_encode($response);
+    ob_end_flush();
+    break;
+
 case 'init':
     $users = chat_get_users($chatuser->chatid, $chatuser->groupid, $cm->groupingid);
     $users = chat_format_userlist($users, $course);

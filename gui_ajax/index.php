@@ -79,15 +79,38 @@ if ( $theme != 'course_theme') {
     $PAGE->requires->css('/mod/chat/gui_ajax/theme/'.$theme.'/chat.css');
 }
 
+
+$cContext = context_course::instance($course->id);
+$isStudent = current(get_user_roles($cContext, $USER->id))->shortname=='student'? true : false;
+$typeControl = '';
+
+$isStudent=1;   //Disables the control feature but remove this line to make it work again
+
+if(!$isStudent){
+    $typeControl .= ' <select id="allowTyping" name="allowTyping">
+        <option value="1">Allow Students to type</option>
+        <option value="0">Do not allow typing</option>
+    </select>';
+}
+
+
 echo $OUTPUT->header();
+    
 echo $OUTPUT->box(html_writer::tag('h2',  get_string('participants'), array('class' => 'accesshide')) .
-        '<ul id="users-list"></ul>', '', 'chat-userlist');
+        '<ul id="users-list"></ul><div id="usersTypingStatus">-</div>' , '', 'chat-userlist');
 echo $OUTPUT->box('', '', 'chat-options');
 echo $OUTPUT->box(html_writer::tag('h2',  get_string('messages', 'chat'), array('class' => 'accesshide')) .
         '<ul id="messages-list"></ul>', '', 'chat-messages');
 $table = new html_table();
 $table->data = array(
-    array('<label class="accesshide" for="input-message">' . get_string('entermessage', 'chat') . ' </label><input type="text" disabled="true" id="input-message" value="Loading..." /> <input type="button" id="button-send" value="'.get_string('send', 'chat').'" /> <a id="choosetheme" href="###">'.get_string('themes').' &raquo; </a>')
+    array(
+        '<label class="accesshide" for="input-message">' . get_string('entermessage', 'chat') . ' </label>
+        <input type="hidden" id="cid" value="'.$chat_sid.'">
+        <input type="text" disabled="true" id="input-message" value="Loading..." /> 
+        <input type="button" id="button-send" value="'.get_string('send', 'chat').'" /> 
+        <a id="choosetheme" href="###">'.get_string('themes').' &raquo; </a>
+        ' . $typeControl
+         )
 );
 echo $OUTPUT->box(html_writer::tag('h2',  get_string('composemessage', 'chat'), array('class' => 'accesshide')) .
         html_writer::table($table), '', 'chat-input-area');
